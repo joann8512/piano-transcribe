@@ -18,3 +18,8 @@ pip install -r requirements.txt
     ```
     pip install piano_transcription_inference
     ```
+
+4. To start transcribing with pre-trained model:  
+```
+python3 inference.py
+```
