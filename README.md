@@ -14,13 +14,14 @@ pip install -r requirements.txt
 2. You may want to change the designated GPU for transcription in `inference.py`  
 
 3. If you have multiple GPUs to run, you can either:  
-    - Change the code lines 58-62 in `piano_transcription_inference/inference.py` to run parallel on multiple GPUs for faster transcription  
+    - Uncomment lines 58-62 in `piano_transcription_inference/inference.py` to run parallel on multiple GPUs for faster transcription  
     - Run with the original package directly:   
     ```
     pip install piano_transcription_inference
     ```
 
 4. To start transcribing with pre-trained model:  
+
 ```
-python3 inference.py
+python transcribe.py
 ```
