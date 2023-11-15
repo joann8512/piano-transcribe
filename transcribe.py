@@ -3,25 +3,52 @@ from piano_transcription_inference import config
 from piano_transcription_inference.utilities import load_audio
 import os
 import time
-import glob
 import torch
 import argparse
-import tqdm
 
-def traverse_dir(path):
-    all_path = []
-    for root, dirs, files in os.walk(path):
-        for name in files:
-            folder = name.split('_')[0]
-            all_path.append(os.path.join(root, name))
-    return all_path
+def traverse_dir(
+        root_dir,
+        extension=('wav'),
+        amount=None,
+        str_=None,
+        is_pure=False,
+        verbose=True,
+        is_sort=False,
+        is_ext=True):
+    if verbose:
+        print('[*] Scanning...')
+    file_list = []
+    cnt = 0
+    for root, _, files in os.walk(root_dir):
+        for file in files:
+            if file.endswith(extension):
+                if (amount is not None) and (cnt == amount):
+                    break
+                if str_ is not None:
+                    if str_ not in file:
+                        continue
+                mix_path = os.path.join(root, file)
+                pure_path = mix_path[len(root_dir)+1:] if is_pure else mix_path
+                if not is_ext:
+                    ext = pure_path.split('.')[-1]
+                    pure_path = pure_path[:-(len(ext)+1)]
+                if verbose:
+                    print(pure_path)
+                file_list.append(pure_path)
+                cnt += 1
+    if verbose:
+        print('Total: %d files' % len(file_list))
+        print('Done!!!')
+    if is_sort:
+        file_list.sort()
+    return file_list
 
 def main():
     print('CUDA Availablility: ', torch.cuda.is_available())
     print('GPU name: ', torch.cuda.get_device_name(device=args.cuda))
     st = time.time()
     
-    # Arugments & parameters
+    # Arguments & parameters
     audio_path = traverse_dir(args.audio_path)
     output_midi_path = args.output_midi_path
     if not os.path.exists(output_midi_path):
@@ -32,24 +59,20 @@ def main():
     
     for i, song in enumerate(audio_path):
         print('Processing [{}/{}] {}'.format(i, len(audio_path), song))
-        title = song.split('/')[-1].split('.')[0]#.replace(' ', '_')
-        title += '.mid'
+        title = os.path.splitext(song.split('/')[-1])[0]
+        title += '.midi'
         if title in os.listdir(output_midi_path):  # Check if already processed
             print('Passing ', song)
             continue
             
         # Load audio
-        #print("### Loading ###")
-        #print(song)
         else:
             (audio, _) = load_audio(song, sr=config.sample_rate, mono=True)
 
             # Transcriptor
-            #print("### Transcriptor ###")
             transcriptor = PianoTranscription(device=device)
 
             # Transcribe and write out to MIDI file
-            #print("### Transcribing/Writing ###")
             transcribed_dict = transcriptor.transcribe(audio, os.path.join(output_midi_path, title))
     ed = time.time()
 
@@ -65,8 +88,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main()
-    
-    #audio_path = ../piano-emotion-src/compound-word-transformer/dataset_wayne/remy_17k_audio_data/data/mp3/DooPiano
-    #output = ../piano-emotion-src/compound-word-transformer/dataset_wayne/remy_17k_audio_data/pedal_midi/src_002
-    #check = '../piano-emotion-src/compound-word-transformer/dataset_wayne/remy_17k_audio_data/pedal_midi/src_002'
     
